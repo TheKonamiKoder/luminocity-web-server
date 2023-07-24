@@ -39,8 +39,10 @@ class MotionSensorData(SensorData):
 
 
 class Sensor:
-    def __init__(self, name: str, stype: SensorType) -> None:
+    def __init__(self, sid: int, name: str, room: str, stype: SensorType) -> None:
+        self.id = sid
         self.name = name
+        self.room = room
         self.type = stype
 
         self.data: Optional[SensorData] = None
