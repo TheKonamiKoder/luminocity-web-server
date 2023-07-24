@@ -43,17 +43,17 @@ def home() -> str:
     return "luminocity web server"
 
 
-@app.route("/get_all", methods=['GET'])
+@app.route("/get_all", methods=["GET"])
 def get_all() -> str:
     return json.dumps(sensors, cls=sensor.SensorEncoder)
 
 
-@app.route("/get_sensor_ids", methods=['GET'])
+@app.route("/get_sensor_ids", methods=["GET"])
 def get_sensor_ids() -> str:
     return str([_sensor.id for _sensor in sensors])
 
 
-@app.route("/get_sensor_data", methods=['GET'])
+@app.route("/get_sensor_data", methods=["GET"])
 def get_with_id() -> str:
     sid: str = request.args.get("sid", None)
 
@@ -64,7 +64,7 @@ def get_with_id() -> str:
     return "sensor_id must be supplied"
 
 
-@app.route("/add_sensor", methods=["UPDATE"])
+@app.route("/add_sensor")
 def add_sensor() -> str:
     sid: str = request.args.get("sid", None)
     name: str = request.args.get("name", None)

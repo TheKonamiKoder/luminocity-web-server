@@ -71,9 +71,9 @@ class Sensor:
 
 class SensorEncoder(JSONEncoder):
     def default(self, s: Sensor) -> dict:
-        if isinstance(s, Sensor):
-            encoded_sensor = {
-                "name": s.name,
-                "type": s.type.name,
-                "data": {"val": s.data.val},
-            }
+        return {
+            "id": s.id,
+            "name": s.name,
+            "room": s.room,
+            "data": {"val": s.data.val},
+        }
