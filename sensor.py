@@ -2,6 +2,7 @@ import random
 import time
 
 from enum import Enum
+from json import JSONEncoder
 
 from typing import Optional
 
@@ -38,9 +39,9 @@ class MotionSensorData(SensorData):
 
 
 class Sensor:
-    def __init__(self, sensor_id: int, sensor_type: SensorType) -> None:
-        self.id = sensor_id
-        self.type = sensor_type
+    def __init__(self, name: str, stype: SensorType) -> None:
+        self.name = name
+        self.type = stype
 
         self.data: Optional[SensorData] = None
 
@@ -64,3 +65,13 @@ class Sensor:
             return LightSensorData(random.uniform(0, 100))
 
         return None
+
+
+class SensorEncoder(JSONEncoder):
+    def default(self, s: Sensor) -> dict:
+        if isinstance(s, Sensor):
+            encoded_sensor = {
+                "name": s.name,
+                "type": s.type.name,
+                "data": {"val": s.data.val},
+            }
