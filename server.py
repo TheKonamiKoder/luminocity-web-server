@@ -53,12 +53,13 @@ def get_sensor_ids() -> str:
     return str([_sensor.id for _sensor in sensors])
 
 
-@app.route("/get_sensor_data")
+@app.route("/get_sensor_data", methods=["GET"])
 def get_with_id() -> str:
-    sensor_id: str = request.args.get("sensor_id", None)
+    sid: str = request.args.get("sid", None)
 
-    if sensor_id:
-        return str(data[sensor_id])
+    for _sensor in sensors:
+        if sid == _sensor.id:
+            return json.dumps(_sensor)
 
     return "sensor_id must be supplied"
 

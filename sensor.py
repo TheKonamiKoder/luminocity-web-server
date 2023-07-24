@@ -57,7 +57,7 @@ class Sensor:
     def get_data(self) -> SensorData:
         # TODO: Make this function actually linked to the sensors
 
-        time.sleep(secs=random.uniform(0, 3))
+        time.sleep(random.uniform(0, 3))
 
         if self.type == SensorType.LIGHT_SENSOR:
             return LightSensorData(random.randint(0, 255))
