@@ -27,9 +27,9 @@ sensors: List[sensor.Sensor] = [
     ),
     sensor.Sensor(
         sid=2,
-        name="Humidity Sensor",
+        name="Door",
         room="Kitchen",
-        stype=sensor.SensorType.HUMIDITY_SENSOR,
+        stype=sensor.SensorType.MOTION_SENSOR,
     ),
 ]
 
@@ -55,16 +55,16 @@ def get_sensor_ids() -> str:
 
 @app.route("/get_sensor_data", methods=["GET"])
 def get_with_id() -> str:
-    sid: str = request.args.get("sid", None)
+    sid: int = int(request.args.get("sid", None))
 
     for _sensor in sensors:
         if sid == _sensor.id:
-            return json.dumps(_sensor)
+            return json.dumps(_sensor, cls=sensor.SensorEncoder)
 
     return "sensor_id must be supplied"
 
 
-@app.route("/add_sensor")
+@app.route("/add_sensor", methods=["POST"])
 def add_sensor() -> str:
     sid: str = request.args.get("sid", None)
     name: str = request.args.get("name", None)

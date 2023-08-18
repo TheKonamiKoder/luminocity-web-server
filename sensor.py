@@ -1,7 +1,7 @@
 import random
 import time
 
-from enum import Enum
+from enum import IntEnum
 from json import JSONEncoder
 
 from typing import Optional, Tuple, Any
@@ -9,7 +9,7 @@ from typing import Optional, Tuple, Any
 from abc import ABC, abstractmethod
 
 
-class SensorType(Enum):
+class SensorType(IntEnum):
     LIGHT_SENSOR = 0
     DHT11_SENSOR = 1
     MOTION_SENSOR = 2
@@ -76,7 +76,7 @@ class Sensor:
         elif self.type == SensorType.DHT11_SENSOR:
             self.data = DHT11SensorData()
         elif self.type == SensorType.MOTION_SENSOR:
-            self.data = MotionSensorData
+            self.data = MotionSensorData()
 
     def get_data(self) -> None:
         # TODO: Make this function actually linked to the sensors
@@ -88,7 +88,7 @@ class Sensor:
         elif self.type == SensorType.DHT11_SENSOR:
             self.data.set_val((random.uniform(-20, 60), random.uniform(0, 100)))
         elif self.type == SensorType.MOTION_SENSOR:
-            self.data.set_val(random.randint(0, 1))
+            self.data.set_val(random.randint(0, 1) != 0)
 
         return self.data.get_val()
 
@@ -99,5 +99,8 @@ class SensorEncoder(JSONEncoder):
             "id": s.id,
             "name": s.name,
             "room": s.room,
-            "data": {"val": s.data.val},
+            "type": int(s.type),
+            "data": {
+                "val": s.data.val
+            },
         }
