@@ -4,37 +4,61 @@ import time
 from enum import Enum
 from json import JSONEncoder
 
-from typing import Optional
+from typing import Optional, Tuple, Any
+
+from abc import ABC, abstractmethod
 
 
 class SensorType(Enum):
     LIGHT_SENSOR = 0
-    TEMPERATURE_SENSOR = 1
-    HUMIDITY_SENSOR = 2
-    MOTION_SENSOR = 3
+    DHT11_SENSOR = 1
+    MOTION_SENSOR = 2
 
 
-class SensorData:
-    pass
+Val = Any  # Different sensors have data of different types
+
+
+class SensorData(ABC):
+    @abstractmethod
+    def get_val(self):
+        pass
+
+    @abstractmethod
+    def set_val(self):
+        pass
 
 
 class LightSensorData(SensorData):
     def __init__(self, val: int = 0) -> None:
         self.val = val
 
+    def get_val(self) -> int:
+        return self.val
 
-class TemperatureSensorData(SensorData):
-    def __init__(self, val: float = 0.0) -> None:
+    def set_val(self, val: int) -> None:
         self.val = val
 
 
-class HumiditySensorData(SensorData):
-    def __init__(self, val: float = 0.0) -> None:
+class DHT11SensorData(SensorData):
+    def __init__(self, val: Tuple[float, float] = (0, 0)) -> None:
+        # The first value of the tuple is the temperature and the second value is humidity
+        self.val = val
+
+    def get_val(self) -> Tuple[float, float]:
+        return self.val
+
+    def set_val(self, val: Tuple[float, float]) -> None:
         self.val = val
 
 
 class MotionSensorData(SensorData):
-    def __init__(self, val: float = False) -> None:
+    def __init__(self, val: bool = False) -> None:
+        self.val = val
+
+    def get_val(self) -> bool:
+        return self.val
+
+    def set_val(self, val: bool) -> None:
         self.val = val
 
 
@@ -49,24 +73,24 @@ class Sensor:
 
         if self.type == SensorType.LIGHT_SENSOR:
             self.data = LightSensorData()
-        elif self.type == SensorType.TEMPERATURE_SENSOR:
-            self.data = TemperatureSensorData()
-        elif self.type == SensorType.HUMIDITY_SENSOR:
-            self.data = HumiditySensorData()
+        elif self.type == SensorType.DHT11_SENSOR:
+            self.data = DHT11SensorData()
+        elif self.type == SensorType.MOTION_SENSOR:
+            self.data = MotionSensorData
 
-    def get_data(self) -> SensorData:
+    def get_data(self) -> None:
         # TODO: Make this function actually linked to the sensors
 
         time.sleep(random.uniform(0, 3))
 
         if self.type == SensorType.LIGHT_SENSOR:
-            return LightSensorData(random.randint(0, 255))
-        elif self.type == SensorType.TEMPERATURE_SENSOR:
-            return TemperatureSensorData(random.uniform(0, 50))
-        elif self.type == SensorType.HUMIDITY_SENSOR:
-            return LightSensorData(random.uniform(0, 100))
+            self.data.set_val(random.randint(0, 255))
+        elif self.type == SensorType.DHT11_SENSOR:
+            self.data.set_val((random.uniform(-20, 60), random.uniform(0, 100)))
+        elif self.type == SensorType.MOTION_SENSOR:
+            self.data.set_val(random.randint(0, 1))
 
-        return None
+        return self.data.get_val()
 
 
 class SensorEncoder(JSONEncoder):

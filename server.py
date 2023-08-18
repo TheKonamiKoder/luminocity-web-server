@@ -23,7 +23,7 @@ sensors: List[sensor.Sensor] = [
         sid=1,
         name="Temp Sensor",
         room="Garden",
-        stype=sensor.SensorType.TEMPERATURE_SENSOR,
+        stype=sensor.SensorType.DHT11_SENSOR,
     ),
     sensor.Sensor(
         sid=2,
