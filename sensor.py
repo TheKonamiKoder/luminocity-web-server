@@ -20,7 +20,7 @@ Val = Any  # Different sensors have data of different types
 
 class SensorData(ABC):
     @abstractmethod
-    def get_val(self):
+    def get_val(self) -> Val:
         pass
 
     @abstractmethod
@@ -78,8 +78,9 @@ class Sensor:
         elif self.type == SensorType.MOTION_SENSOR:
             self.data = MotionSensorData()
 
-    def get_data(self) -> None:
+    def update_data(self) -> None:
         # TODO: Make this function actually linked to the sensors
+        # TODO: At the moment this is just a test
 
         time.sleep(random.uniform(0, 3))
 
@@ -100,7 +101,5 @@ class SensorEncoder(JSONEncoder):
             "name": s.name,
             "room": s.room,
             "type": int(s.type),
-            "data": {
-                "val": s.data.val
-            },
+            "data": {"val": s.data.val},
         }
