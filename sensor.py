@@ -78,28 +78,15 @@ class Sensor:
         elif self.type == SensorType.MOTION_SENSOR:
             self.data = MotionSensorData()
 
-    def update_data(self) -> None:
-        # TODO: Make this function actually linked to the sensors
-        # TODO: At the moment this is just a test
-
-        time.sleep(random.uniform(0, 3))
-
-        if self.type == SensorType.LIGHT_SENSOR:
-            self.data.set_val(random.randint(0, 255))
-        elif self.type == SensorType.DHT11_SENSOR:
-            self.data.set_val((random.uniform(-20, 60), random.uniform(0, 100)))
-        elif self.type == SensorType.MOTION_SENSOR:
-            self.data.set_val(random.randint(0, 1) != 0)
-
-        return self.data.get_val()
-
-
-class SensorEncoder(JSONEncoder):
-    def default(self, s: Sensor) -> dict:
-        return {
-            "id": s.id,
-            "name": s.name,
-            "room": s.room,
-            "type": int(s.type),
-            "data": {"val": s.data.val},
-        }
+    def to_json(self) -> str:
+        """Returns a json string that shows the values of the sensor."""
+        return f"""
+            {{
+                id:   {self.id},
+                name: {self.name},
+                room: {self.room},
+                type: {int(self.type)},
+                val:  {self.data.get_val()}
+            }}""".replace(
+            "\n", ""
+        )  # Gets rid of the newlines, so that when displaying it is easier.
