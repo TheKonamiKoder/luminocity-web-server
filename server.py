@@ -34,7 +34,8 @@ def get_all() -> Tuple[str, int]:
     for sensor in sensors.values():
         json_sensors += sensor.to_json() + ","
 
-    if len(sensors.values()) > 0: json_sensors = json_sensors[:len(json_sensors)-1]
+    if len(sensors.values()) > 0:
+        json_sensors = json_sensors[: len(json_sensors) - 1]
     json_sensors += "]"
 
     return json_sensors, 200
@@ -150,9 +151,9 @@ def rename_sensor() -> Tuple[str, int]:
 
     sensors[sid].name = name
     sensors[sid].room = room
-    
+
     return "Success - Renamed sensor!", 200
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0")
