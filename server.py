@@ -1,48 +1,24 @@
+import json
 import random
 import time
-import json
-
-from typing import List, Tuple
-
-import sensor
-from sensor import Sensor
+from typing import Dict, Tuple
 
 from flask import Flask, request
+
+import sensor
 
 app = Flask(__name__)
 app.debug = True  # For debugging
 
+sensors: Dict[int, sensor.Sensor] = {}
 
-sensors: List[Sensor] = [
-    Sensor(
-        sid=0,
-        name="Light Sensor",
-        room="Living Room",
-        stype=sensor.SensorType.LIGHT_SENSOR,
-    ),
-    Sensor(
-        sid=1,
-        name="Temp Sensor",
-        room="Garden",
-        stype=sensor.SensorType.DHT11_SENSOR,
-    ),
-    Sensor(
-        sid=2,
-        name="Door",
-        room="Kitchen",
-        stype=sensor.SensorType.MOTION_SENSOR,
-    ),
-    Sensor(
-        sid=3,
-        name="Window",
-        room="Kitchen",
-        stype=sensor.SensorType.LIGHT_SENSOR,
-    ),
-]
+
+def szudik_function(a: int, b: int) -> int:
+    return a * a + a + b if a >= b else a + b * b
 
 
 # Populate sensors with data
-def update_sensors(sensors: List[sensor.Sensor]):
+def update_sensors(sensors: Dict[int, sensor.Sensor]):
     for i in range(len(sensors)):
         sensors[i].update_data()
 
@@ -65,7 +41,7 @@ def get_sensor_ids() -> str:
 
 @app.route("/get_sensor_data", methods=["GET"])
 def get_with_id() -> str:
-    sid: int = int(request.args.get("sid", None))
+    sid = int(request.args.get("sid", None))
 
     for _sensor in sensors:
         if sid == _sensor.id:
@@ -73,32 +49,83 @@ def get_with_id() -> str:
 
     return "sensor_id must be supplied"
 
+@app.route("/update_sensor_value", methods=["POST"])
+def update_sensor_value() -> Tuple[str, int]:
+    """
+    Updates the sensor value. This function will usually be called when the sensor sends
+    this request to the webserver. The function also handles adding new sensors to the sensors
+    dictionary as well.
+    """
 
-@app.route("/add_sensor", methods=["POST"])
-def add_sensor() -> Tuple[str, int]:
-    json_data = request.get_json(force=True)
+    request_body = request.get_json(force=True)
 
-    sid = random.randint(0, (1 << 32) - 1)
-    # Name supplied can't be empty
-    name = json_data.get("name", "")
-    if name == "":
-        return '400 Bad Request - Sensor name supplied cannot be "".', 400
+    # Station ID can't be negative
+    station_id = request_body.get("station_id", -1)
+    if station_id < 0:
+        return "400 Bad Request - Station ID supplied cannot be negative.", 400
 
-    # Room supplied can't be empty
-    room = json_data.get("room", "")
-    if room == "":
-        return '400 Bad Request - Sensor room supplied cannot be "".', 400
+    # Sensor ID can't be negative
+    sensor_id = request_body.get("sensor_id", -1)
+    if station_id < 0:
+        return "400 Bad Request - Station ID supplied cannot be negative.", 400
 
     # Way to check if type provided is valid without having to iterate over list
     try:
-        # The type can be 0, which in python is False, but it can't be -1
-        stype = sensor.SensorType(json_data.get("type", -1))
+        stype = sensor.SensorType(request_body.get("type", -1))
     except ValueError:
         return "400 Bad Request - Invalid sensor type supplied.", 400
 
-    sensors.append(Sensor(sid, name, room, stype))
+    if stype == sensor.SensorType.LIGHT_SENSOR:
+        # The value will never be -1
+        val = request_body.get("val", -1)
+        if val < 0:
+            return "400 Bad Request - Light Data cannot be negative.", 400
 
-    return "Successfully added sensor", 200
+        data: sensor.SensorData = sensor.LightSensorData(val)
+
+    elif stype == sensor.SensorType.DHT11_SENSOR:
+        # The values for temperature and humidity can't be empty
+        _val: Tuple[float, float] = request_body.get("val", [None])
+
+        try:
+            _val = tuple(_val)
+        except TypeError:
+            return (
+                "400 Bad Request - DHT11 Data must be a tuple with 2 numerical items.",
+                400,
+            )
+
+        if _val := len(tuple(val)) == 2:
+            if -20 <= _val[0] <= 60 and 0 <= _val[1] <= 100:
+                val = _val
+            else:
+                return "400 Bad Request - Incorrect DHT11 Data supplied.", 400
+        else:
+            return (
+                "400 Bad Request - DHT11 Data must be a tuple with 2 numerical items.",
+                400,
+            )
+
+        data: sensor.SensorData = sensor.DHT11SensorData(val)
+
+    elif stype == sensor.SensorType.MOTION_SENSOR:
+        # The value for motion must be a boolean
+        val = request_body.get("val", None)
+        if not (val == True or val == False):
+            return "400 Bad Request - Motion Data must be a boolean.", 400
+
+        data: sensor.SensorData = sensor.MotionSensorData(val)
+
+    sid = szudik_function(station_id, sensor_id)
+    if s := sensors.get(szudik_function(station_id, sensor_id), False):
+        s.data.set_val(data.get_val())
+    else:
+        sensors[sid] = sensor.Sensor(
+            sid=sid,
+            name=str(station_id) + "_" + str(sensor_id),
+            room="New Sensors",
+            stype=stype,
+        )
 
 
 if __name__ == "__main__":
