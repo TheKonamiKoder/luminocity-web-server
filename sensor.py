@@ -80,7 +80,8 @@ class Sensor:
 
     def to_json(self) -> str:
         """Returns a json string that shows the values of the sensor."""
-        return f"""
+        return (
+            f"""
             {{
                 \"id\":   {self.id},
                 \"name\": \"{self.name}\",
@@ -88,5 +89,8 @@ class Sensor:
                 \"type\": {int(self.type)},
                 \"val\":  {self.data.get_val()}
             }}""".replace(
-            "\n", ""
-        )  # Gets rid of the newlines, so that when displaying it is easier.
+                "\n", ""
+            )
+            .replace("(", "[")
+            .replace(")", "]")
+        )

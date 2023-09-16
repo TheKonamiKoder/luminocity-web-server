@@ -87,7 +87,7 @@ def update_sensor_value() -> Tuple[str, int]:
                 400,
             )
 
-        if _val := len(tuple(val)) == 2:
+        if len(_val) == 2:
             if -20 <= _val[0] <= 60 and 0 <= _val[1] <= 100:
                 val = _val
             else:
