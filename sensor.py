@@ -24,7 +24,11 @@ class SensorData(ABC):
         pass
 
     @abstractmethod
-    def set_val(self):
+    def set_val(self) -> None:
+        pass
+    
+    @abstractmethod
+    def to_json(self) -> str:
         pass
 
 
@@ -37,6 +41,9 @@ class LightSensorData(SensorData):
 
     def set_val(self, val: int) -> None:
         self.val = val
+        
+    def to_json(self) -> str:
+        return str(self.val)
 
 
 class DHT11SensorData(SensorData):
@@ -48,8 +55,11 @@ class DHT11SensorData(SensorData):
         return self.val
 
     def set_val(self, val: Tuple[float, float]) -> None:
+        #print("The value of DHT11 is being set to (line 59) ", val)
         self.val = val
 
+    def to_json(self) -> str:
+        return f"[{self.val[0]}, {self.val[1]}]"
 
 class MotionSensorData(SensorData):
     def __init__(self, val: bool = False) -> None:
@@ -60,6 +70,9 @@ class MotionSensorData(SensorData):
 
     def set_val(self, val: bool) -> None:
         self.val = val
+        
+    def to_json(self) -> str:
+        return "true" if self.val else "false"
 
 
 class Sensor:
@@ -69,8 +82,8 @@ class Sensor:
         self.room = room
         self.type = stype
 
-        self.data: Optional[SensorData] = None
-
+        self.data: SensorData = None
+        
         if self.type == SensorType.LIGHT_SENSOR:
             self.data = LightSensorData()
         elif self.type == SensorType.DHT11_SENSOR:
@@ -87,10 +100,8 @@ class Sensor:
                 \"name\": \"{self.name}\",
                 \"room\": \"{self.room}\",
                 \"type\": {int(self.type)},
-                \"val\":  {self.data.get_val()}
+                \"val\":  {self.data.to_json()}
             }}""".replace(
                 "\n", ""
             )
-            .replace("(", "[")
-            .replace(")", "]")
         )

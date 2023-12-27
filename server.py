@@ -62,56 +62,11 @@ def update_sensor_value() -> Tuple[str, int]:
         return "400 Bad Request - Station ID supplied cannot be negative.", 400
 
     # Way to check if type provided is valid without having to iterate over list
-    try:
-        stype = sensor.SensorType(request_body.get("type", -1))
-    except ValueError:
-        return "400 Bad Request - Invalid sensor type supplied.", 400
-
-    if stype == sensor.SensorType.LIGHT_SENSOR:
-        # The value will never be -1
-        val = request_body.get("val", -1)
-        if val < 0:
-            return "400 Bad Request - Light Data cannot be negative.", 400
-
-        data: sensor.SensorData = sensor.LightSensorData(val)
-
-    elif stype == sensor.SensorType.DHT11_SENSOR:
-        # The values for temperature and humidity can't be empty
-        _val: Tuple[float, float] = request_body.get("val", [None])
-
-        try:
-            _val = tuple(_val)
-        except TypeError:
-            return (
-                "400 Bad Request - DHT11 Data must be a tuple with 2 numerical items.",
-                400,
-            )
-
-        if len(_val) == 2:
-            if -20 <= _val[0] <= 60 and 0 <= _val[1] <= 100:
-                val = _val
-            else:
-                return "400 Bad Request - Incorrect DHT11 Data supplied.", 400
-        else:
-            return (
-                "400 Bad Request - DHT11 Data must be a tuple with 2 numerical items.",
-                400,
-            )
-
-        data: sensor.SensorData = sensor.DHT11SensorData(val)
-
-    elif stype == sensor.SensorType.MOTION_SENSOR:
-        # The value for motion must be a boolean
-        val = request_body.get("val", None)
-        if not (val == True or val == False):
-            return "400 Bad Request - Motion Data must be a boolean.", 400
-
-        data: sensor.SensorData = sensor.MotionSensorData(val)
-
+    stype = sensor.SensorType(request_body.get("type", -1))
+    
+    
     sid = szudik_function(station_id, sensor_id)
-    if s := sensors.get(szudik_function(station_id, sensor_id), False):
-        s.data.set_val(data.get_val())
-    else:
+    if not sensors.get(szudik_function(station_id, sensor_id), False):
         # Create a new sensor because it does not already exist in the database
         sensors[sid] = sensor.Sensor(
             sid=sid,
@@ -120,6 +75,15 @@ def update_sensor_value() -> Tuple[str, int]:
             stype=stype,
         )
         return "Success - Added new sensor!", 200
+    
+    current_sensor = sensors[sid]
+    
+    val = request_body.get("val")
+    
+    if request_body.get("type") == 1:
+        val = tuple(val)
+    
+    current_sensor.data.set_val(val)
 
     return "Success - Updated sensor value!", 200
 
