@@ -1,6 +1,3 @@
-import json
-import random
-import time
 from typing import Dict, Tuple
 
 from flask import Flask, request
@@ -26,7 +23,7 @@ def home() -> Tuple[str, int]:
     return "luminocity web server", 200
 
 
-@app.route("/get_all", methods=["GET"])
+@app.route("/get_sensors", methods=["GET"])
 def get_all() -> Tuple[str, int]:
     """Returns all the sensors in the sensors dictionary in json form."""
     json_sensors = "["  # Returns list of sensors
@@ -50,19 +47,11 @@ def update_sensor_value() -> Tuple[str, int]:
     """
 
     request_body = request.get_json(force=True)
-
-    # Station ID can't be negative
-    station_id = request_body.get("station_id", -1)
-    if station_id < 0:
-        return "400 Bad Request - Station ID supplied cannot be negative.", 400
-
-    # Sensor ID can't be negative
-    sensor_id = request_body.get("sensor_id", -1)
-    if station_id < 0:
-        return "400 Bad Request - Station ID supplied cannot be negative.", 400
+    station_id = request_body.get("station_id")
+    sensor_id = request_body.get("sensor_id")
 
     # Way to check if type provided is valid without having to iterate over list
-    stype = sensor.SensorType(request_body.get("type", -1))
+    stype = sensor.SensorType(request_body.get("type"))
     
     
     sid = szudik_function(station_id, sensor_id)
@@ -74,7 +63,6 @@ def update_sensor_value() -> Tuple[str, int]:
             room="New Sensors",
             stype=stype,
         )
-        return "Success - Added new sensor!", 200
     
     current_sensor = sensors[sid]
     
@@ -88,33 +76,22 @@ def update_sensor_value() -> Tuple[str, int]:
     return "Success - Updated sensor value!", 200
 
 
-@app.route("/rename_sensor", methods=["POST"])
-def rename_sensor() -> Tuple[str, int]:
+@app.route("/rename_component", methods=["POST"])
+def rename_component() -> Tuple[str, int]:
     """
     Will be called by the frontend when it is necassery to rename the sensor -
-    including the room as well as the sensor's name. It is most likely to be
-    used when changing the default name of a new sensor to a more useful name
+    including the room as well as the component's name. It is most likely to be
+    used when changing the default name of a new component to a more useful name
     by the user.
     """
     request_body = request.get_json(force=True)
 
-    # Sensor's ID must be of a sensor that already exists.
-    sid: int = request_body.get("id", -1)
-    if not sensors.get(sid, False):
-        return "400 Bad Request - Sensor ID provided does not exist.", 400
-
-    # Sensor's name must not be empty
-    name: str = request_body.get("name", "")
-    if name == "":
-        return "400 Bad Request - Sensor Name is not provided", 400
-
-    # Sensor's room must not be empty
-    room: str = request_body.get("room", "")
-    if room == "":
-        return "400 Bad Request - Sensor Room is not provided", 400
-
-    sensors[sid].name = name
-    sensors[sid].room = room
+    _id: int = request_body.get("id")
+    name: str = request_body.get("name")
+    room: str = request_body.get("room")
+    
+    sensors[_id].name = name
+    sensors[_id].room = room
 
     return "Success - Renamed sensor!", 200
 

@@ -1,38 +1,54 @@
-import random
-import time
-
 from enum import IntEnum
-from json import JSONEncoder
 
-from typing import Optional, Tuple, Any
+from typing import Tuple, Any
 
 from abc import ABC, abstractmethod
 
 
-class SensorType(IntEnum):
-    LIGHT_SENSOR = 0
-    DHT11_SENSOR = 1
-    MOTION_SENSOR = 2
+# The ComponentType is the enum which has the types
+# Actuators have a negative value, while sensors have a positive value
+class ComponentType(IntEnum):
+    LED_ACTUATOR = -1
+    
+    LIGHT_SENSOR = 1
+    DHT11_SENSOR = 2
+    MOTION_SENSOR = 3
 
 
 Val = Any  # Different sensors have data of different types
 
 
-class SensorData(ABC):
+class ComponentData(ABC):
     @abstractmethod
     def get_val(self) -> Val:
         pass
 
     @abstractmethod
-    def set_val(self) -> None:
+    def set_val(self, val: Val) -> None:
         pass
     
     @abstractmethod
     def to_json(self) -> str:
         pass
 
+# Actuators
 
-class LightSensorData(SensorData):
+class LEDActuatorData(ComponentData):
+    def __init__(self, val: bool = False) -> None:
+        self.val = val
+    
+    def get_val(self) -> bool:
+        return self.val
+    
+    def set_val(self, val: bool) -> None:
+        self.val = val
+        
+    def to_json(self) -> str:
+        return "true" if self.val else "false"
+
+# Sensors
+
+class LightSensorData(ComponentData):
     def __init__(self, val: int = 0) -> None:
         self.val = val
 
@@ -46,7 +62,7 @@ class LightSensorData(SensorData):
         return str(self.val)
 
 
-class DHT11SensorData(SensorData):
+class DHT11SensorData(ComponentData):
     def __init__(self, val: Tuple[float, float] = (0, 0)) -> None:
         # The first value of the tuple is the temperature and the second value is humidity
         self.val = val
@@ -61,7 +77,7 @@ class DHT11SensorData(SensorData):
     def to_json(self) -> str:
         return f"[{self.val[0]}, {self.val[1]}]"
 
-class MotionSensorData(SensorData):
+class MotionSensorData(ComponentData):
     def __init__(self, val: bool = False) -> None:
         self.val = val
 
@@ -75,20 +91,22 @@ class MotionSensorData(SensorData):
         return "true" if self.val else "false"
 
 
-class Sensor:
-    def __init__(self, sid: int, name: str, room: str, stype: SensorType) -> None:
-        self.id = sid
+class Component:
+    def __init__(self, _id: int, name: str, room: str, _type: ComponentType) -> None:
+        self.id = _id
         self.name = name
         self.room = room
-        self.type = stype
+        self.type = _type
 
-        self.data: SensorData = None
+        self.data: ComponentData = None
         
-        if self.type == SensorType.LIGHT_SENSOR:
+        if self.type == ComponentType.LED_ACTUATOR:
+            self.data = LEDActuatorData()
+        elif self.type == ComponentType.LIGHT_SENSOR:
             self.data = LightSensorData()
-        elif self.type == SensorType.DHT11_SENSOR:
+        elif self.type == ComponentType.DHT11_SENSOR:
             self.data = DHT11SensorData()
-        elif self.type == SensorType.MOTION_SENSOR:
+        elif self.type == ComponentType.MOTION_SENSOR:
             self.data = MotionSensorData()
 
     def to_json(self) -> str:
@@ -105,3 +123,4 @@ class Sensor:
                 "\n", ""
             )
         )
+
