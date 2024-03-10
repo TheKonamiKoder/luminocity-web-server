@@ -1,6 +1,8 @@
 import requests
 from sensor import *
 
+# TODO: Clean up script to make it more readabel
+
 url = "http://192.168.1.90:5000"
 
 def sf(a: int, b: int) -> int:

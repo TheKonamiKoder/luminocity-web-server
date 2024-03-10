@@ -7,7 +7,7 @@ import sensor
 app = Flask(__name__)
 app.debug = True  # For debugging
 
-sensors: Dict[int, sensor.Sensor] = {}
+components: Dict[int, sensor.Component] = { 1141523: sensor.Component(1141523, "jk", "garden", sensor.ComponentType.DHT11_SENSOR)}
 
 
 def szudik_function(a: int, b: int) -> int:
@@ -18,32 +18,36 @@ def szudik_function(a: int, b: int) -> int:
     return a * a + a + b if a >= b else a + b * b
 
 
+# API requests
+
 @app.route("/")
 def home() -> Tuple[str, int]:
     return "luminocity web server", 200
 
 
-@app.route("/get_sensors", methods=["GET"])
-def get_all() -> Tuple[str, int]:
-    """Returns all the sensors in the sensors dictionary in json form."""
-    json_sensors = "["  # Returns list of sensors
+@app.route("/get_components", methods=["GET"])
+def get_components() -> Tuple[str, int]:
+    """Returns all the components in the sensors dictionary in json form."""
+    json_components = "["  # Returns list of sensors
 
-    for sensor in sensors.values():
-        json_sensors += sensor.to_json() + ","
+    for component in components.values():
+        json_components += component.to_json() + ","
 
-    if len(sensors.values()) > 0:
-        json_sensors = json_sensors[: len(json_sensors) - 1]
-    json_sensors += "]"
+    # This just removes the last comma at the end, since JSON does not allow trailing commas
+    if len(components) > 0:
+        json_components = json_components[: len(json_components) - 1]
+        
+    json_components += "]"
 
-    return json_sensors, 200
+    return json_components, 200
 
 
 @app.route("/update_sensor_value", methods=["POST"])
 def update_sensor_value() -> Tuple[str, int]:
     """
     Updates the sensor value. This function will usually be called when the sensor
-    sends this request to the webserver. The function also handles adding new
-    sensors to the sensors dictionary as well.
+    sends this request to the webserver. The function also handles adding new sensors
+    to the sensors dictionary as well.
     """
 
     request_body = request.get_json(force=True)
@@ -51,24 +55,25 @@ def update_sensor_value() -> Tuple[str, int]:
     sensor_id = request_body.get("sensor_id")
 
     # Way to check if type provided is valid without having to iterate over list
-    stype = sensor.SensorType(request_body.get("type"))
+    type_ = sensor.ComponentType(request_body.get("type"))
     
+    id_ = szudik_function(station_id, sensor_id)
     
-    sid = szudik_function(station_id, sensor_id)
-    if not sensors.get(szudik_function(station_id, sensor_id), False):
-        # Create a new sensor because it does not already exist in the database
-        sensors[sid] = sensor.Sensor(
-            sid=sid,
+    # Create a new sensor because it does not already exist in the database
+    if not components.get(id_, False):
+        components[id_] = sensor.Component(
+            id_=id_,
             name=str(station_id)[0:5] + "_" + str(sensor_id)[0:5],
             room="New Sensors",
-            stype=stype,
+            type_=type_,
         )
     
-    current_sensor = sensors[sid]
+    current_sensor = components[id_]
     
     val = request_body.get("val")
     
-    if request_body.get("type") == 1:
+    # This is 
+    if request_body.get("type") == sensor.ComponentType.DHT11_SENSOR:
         val = tuple(val)
     
     current_sensor.data.set_val(val)
@@ -76,22 +81,70 @@ def update_sensor_value() -> Tuple[str, int]:
     return "Success - Updated sensor value!", 200
 
 
+@app.route("/update_actuator_value", methods=["POST"])
+def update_actuator_value() -> Tuple[str, int]:
+    """
+    The app will be able to update the values of the actuators and then the stations
+    will request to see if any changes have been made.
+    """
+    
+    request_body = request.get_json(force=True)
+    
+    id_ = request_body.get("id")
+    
+    val = request_body.get("val")
+    
+    components[id_].data.set_val(val)
+    
+    return "Success - Updated actuator value!", 200
+
+
+@app.route("/get_actuator_value", methods=["GET"])
+def get_actuator_value() -> Tuple[str, int]:
+    """
+    The stations will request the server for any changes to the actuator (whose value
+    can be cahanged based on the application with request update_actuator_value). The
+    actuators will then physically change to match the data on the server. This
+    function will also add actuators to the dictionary when it is first used.
+    """
+    
+    station_id = request.args.get("station_id", type=int)
+    sensor_id = request.args.get("sensor_id", type=int)
+    
+    type_ = sensor.ComponentType(request.args.get("type", type=int))
+    
+    id_ = szudik_function(station_id, sensor_id)
+    
+    if not components.get(id_, False):
+        components[id_] = sensor.Component(
+            id_=id_,
+            name=str(station_id)[0:5] + "_" + str(sensor_id)[0:5],
+            room="New Actuators",
+            type_=type_            
+        )
+        
+        return "Success - Added new actuator.", 200
+    else:
+        return components[id_].data.to_json(), 200
+        
+
 @app.route("/rename_component", methods=["POST"])
 def rename_component() -> Tuple[str, int]:
     """
-    Will be called by the frontend when it is necassery to rename the sensor -
-    including the room as well as the component's name. It is most likely to be
-    used when changing the default name of a new component to a more useful name
-    by the user.
+    Will be called by the frontend when it is necassery to rename the sensor - 
+    including the room as well as the component's name. It is most likely to be used
+    when changing the default name of a new component to a more useful name by the 
+    user.
     """
+    
     request_body = request.get_json(force=True)
 
-    _id: int = request_body.get("id")
+    id_: int = request_body.get("id")
     name: str = request_body.get("name")
     room: str = request_body.get("room")
     
-    sensors[_id].name = name
-    sensors[_id].room = room
+    components[id_].name = name
+    components[id_].room = room
 
     return "Success - Renamed sensor!", 200
 

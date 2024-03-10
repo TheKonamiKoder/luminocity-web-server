@@ -6,9 +6,10 @@ from abc import ABC, abstractmethod
 
 
 # The ComponentType is the enum which has the types
-# Actuators have a negative value, while sensors have a positive value
+# *Actuators must have a negative value, while sensors have a positive value*
 class ComponentType(IntEnum):
     LED_ACTUATOR = -1
+    
     
     LIGHT_SENSOR = 1
     DHT11_SENSOR = 2
@@ -92,11 +93,11 @@ class MotionSensorData(ComponentData):
 
 
 class Component:
-    def __init__(self, _id: int, name: str, room: str, _type: ComponentType) -> None:
-        self.id = _id
+    def __init__(self, id_: int, name: str, room: str, type_: ComponentType) -> None:
+        self.id = id_
         self.name = name
         self.room = room
-        self.type = _type
+        self.type = type_
 
         self.data: ComponentData = None
         
@@ -108,6 +109,12 @@ class Component:
             self.data = DHT11SensorData()
         elif self.type == ComponentType.MOTION_SENSOR:
             self.data = MotionSensorData()
+            
+    def is_sensor(self) -> bool:
+        if int(self.type) > 0:      # All the sensors will have positive integer values in enum
+            return True
+        else:
+            return False
 
     def to_json(self) -> str:
         """Returns a json string that shows the values of the sensor."""
