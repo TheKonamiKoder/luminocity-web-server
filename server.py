@@ -3,11 +3,23 @@ from typing import Dict, Tuple
 from flask import Flask, request
 
 import sensor
+from sensor import Component, ComponentType
 
 app = Flask(__name__)
 app.debug = True  # For debugging
 
-components: Dict[int, sensor.Component] = { 1141523: sensor.Component(1141523, "jk", "garden", sensor.ComponentType.DHT11_SENSOR)}
+components: Dict[int, sensor.Component] = {
+    0: Component(0, "Lamp", "Bedroom", ComponentType.LED_ACTUATOR),
+    1: Component(1, "Lights", "Bedroom", ComponentType.LIGHT_SENSOR),
+    2: Component(2, "Door", "Bedroom", ComponentType.MOTION_SENSOR),
+    3: Component(3, "Temperature", "Bedroom", ComponentType.DHT11_SENSOR),
+}
+
+components[0].data.set_val(True)
+components[1].data.set_val(235)
+components[2].data.set_val(False)
+components[3].data.set_val((30.10, 89.1))
+
 
 
 def szudik_function(a: int, b: int) -> int:
@@ -48,6 +60,17 @@ def update_sensor_value() -> Tuple[str, int]:
     Updates the sensor value. This function will usually be called when the sensor
     sends this request to the webserver. The function also handles adding new sensors
     to the sensors dictionary as well.
+    
+    Input - JSON, with parameters as shown below:
+    
+    {
+        "station_id": (positive integer),
+        "sensor_id": (positive integer),
+        "type": (integer),
+        "val": (value of type required by sensor type)
+    }
+    
+    Output - "Success - Updated sensor value!"
     """
 
     request_body = request.get_json(force=True)
@@ -115,6 +138,8 @@ def get_actuator_value() -> Tuple[str, int]:
     
     id_ = szudik_function(station_id, sensor_id)
     
+    print(station_id, sensor_id, type_, id_)
+    
     if not components.get(id_, False):
         components[id_] = sensor.Component(
             id_=id_,
@@ -123,9 +148,9 @@ def get_actuator_value() -> Tuple[str, int]:
             type_=type_            
         )
         
-        return "Success - Added new actuator.", 200
-    else:
-        return components[id_].data.to_json(), 200
+    print(components[id_].data.to_json())
+        
+    return components[id_].data.to_json(), 200
         
 
 @app.route("/rename_component", methods=["POST"])

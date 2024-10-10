@@ -15,14 +15,16 @@ def sf(a: int, b: int) -> int:
 
 # Generate list of sensors
 sensors = [
-    Component(sf(0, 0), "light_sensor", "hall", ComponentType.LIGHT_SENSOR),
-    Component(sf(0, 1), "dht11", "loft", ComponentType.DHT11_SENSOR),
-    Component(sf(0, 2), "led", "outside", ComponentType.LED_ACTUATOR),
+    Component(sf(0, 2), "Lamp", "Bedroom", ComponentType.LED_ACTUATOR),
+    Component(sf(0, 0), "Lights", "Bedroom", ComponentType.LIGHT_SENSOR),
+    Component(sf(0, 3), "Door", "Bedroom", ComponentType.MOTION_SENSOR),
+    Component(sf(0, 1), "Temperature", "Bedroom", ComponentType.DHT11_SENSOR),
 ]
 
-sensors[0].data.set_val(10)
-sensors[1].data.set_val((41, 22))
+sensors[0].data.set_val(True)
+sensors[1].data.set_val(235)
 sensors[2].data.set_val(False)
+sensors[3].data.set_val((30.10, 89.1))
 
 
 get_components = requests.get(url+"/get_components")

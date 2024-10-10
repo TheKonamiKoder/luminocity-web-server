@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 class ComponentType(IntEnum):
     LED_ACTUATOR = -1
     
-    
     LIGHT_SENSOR = 1
     DHT11_SENSOR = 2
     MOTION_SENSOR = 3
@@ -76,7 +75,7 @@ class DHT11SensorData(ComponentData):
         self.val = val
 
     def to_json(self) -> str:
-        return f"[{self.val[0]}, {self.val[1]}]"
+        return str(list(self.val))
 
 class MotionSensorData(ComponentData):
     def __init__(self, val: bool = False) -> None:
